@@ -1,0 +1,43 @@
+{
+  "name": "nvim-jupy-bridge",
+  "displayName": "Neovim - VS Code Notebook Sync Runner",
+  "description": "Auto-jump & execute target cell in vscode notebook, while editing in Neovim (using Jupytext) ",
+  "version": "0.0.8",
+  "publisher": "Vitor",
+  "engines": { "vscode": "^1.90.0" },
+  "activationEvents": [
+  "onStartupFinished",
+  "onNotebook:jupyter-notebook",
+  "workspaceContains:.vscode/nvim-sync.json"
+],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "nvimJupy.runAllNow",
+        "title": "NvimJupy: Run All Now"
+      },
+      {
+        "command": "nvimJupy.runBelowNow",
+        "title": "NvimJupy: Run From Last Edited Cell (Current + Below)"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Nvim Jupy Bridge",
+      "properties": {
+        "nvimJupy.delayMs": {
+          "type": "number",
+          "default": 80,
+          "description": "Notebook 更新イベントを固定待機時間。動作が不安定な場合は増やす"
+        },
+        "nvimJupy.openIfClosed": {
+          "type": "boolean",
+          "default": true,
+          "description": "対応する .ipynb が閉じていたら自動で開く"
+        }
+      }
+    }
+  },
+  "dependencies": {}
+}

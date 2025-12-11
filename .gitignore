@@ -1,0 +1,17 @@
+# 依存パッケージ（毎回 npm install で再現できる）
+node_modules/
+
+
+# パッケージングした .vsix ファイル
+*.vsix
+
+# ローカル環境専用の設定や秘密情報
+.env
+.DS_Store
+Thumbs.db
+
+# ログファイル
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
