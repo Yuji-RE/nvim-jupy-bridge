@@ -17,6 +17,7 @@ function log(msg) {
 // 直近イベント情報（重複ガード用）
 let lastSyncPath = null;
 let lastSyncTime = 0;
+let lastTarget = null; // { ipynbUri, idx }
 const DUP_WINDOW_MS = 200; // この時間内に同じファイルならダブりとみなす
 
 async function readJsonSafe(uri) {
@@ -105,56 +106,63 @@ async function selectAndRevealCell(nbEditor, index) {
 async function runAction(action, nbDoc, startIndex) {
   const t0 = Date.now();
 
-  // まずはフォーカス不要の VS Code 組み込みコマンドで実行（成功すればここで終わり）
   try {
     if (action === 'runAll') {
-      // ノート全体
       await vscode.commands.executeCommand('notebook.execute', nbDoc.uri);
-      log(`runAction(notebook.execute): finished in ${Date.now() - t0}ms`);
-      return;
-    } else {
-      // 現セル + 下をまとめて実行
-      const end = nbDoc.cellCount;
-      const range = new vscode.NotebookRange(startIndex, end);
-
-      // ranges と対象ノートの URI を明示
-      await vscode.commands.executeCommand(
-        'notebook.cell.execute',
-        { ranges: [range] },
-        nbDoc.uri,
-      );
-      log(
-        `runAction(notebook.cell.execute): finished in ${Date.now() - t0}ms (startIndex=${startIndex}, end=${end})`,
-      );
+      log(`runAction(notebook.execute): ${Date.now() - t0}ms`);
       return;
     }
+
+    if (action === 'runCell') {
+      await vscode.commands.executeCommand(
+        'notebook.cell.execute',
+        { start: startIndex, end: startIndex + 1 },
+        nbDoc.uri,
+      );
+      log(`runAction(runCell): ${Date.now() - t0}ms`);
+      return;
+    }
+
+    // runBelow
+    await vscode.commands.executeCommand(
+      'notebook.cell.execute',
+      { start: startIndex, end: nbDoc.cellCount },
+      nbDoc.uri,
+    );
+    log(`runAction(runBelow): ${Date.now() - t0}ms`);
+    return;
+
   } catch (e) {
-    console.warn('notebook.* commands failed, fallback to jupyter.*', e);
-    log(`runAction: notebook.* failed, fallback. error=${e}`);
+    log(`runAction: notebook.* failed -> fallback. error=${e}`);
   }
 
-  // フォールバック（従来どおりの Jupyter コマンド：フォーカスが必要）
-  try {
+  // fallback（フォーカス必要）
+  if (action === 'runAll') {
+    await vscode.commands.executeCommand('jupyter.runAllCells');
+    return;
+  }
+  if (action === 'runCell') {
     await vscode.commands.executeCommand('jupyter.runCurrentCell');
-  } catch {}
+    return;
+  }
+  await vscode.commands.executeCommand('jupyter.runCurrentCell');
   try {
     await vscode.commands.executeCommand('jupyter.runCellAndAllBelow');
   } catch {
-    try {
-      await vscode.commands.executeCommand('jupyter.runBelow');
-    } catch {}
+    await vscode.commands.executeCommand('jupyter.runBelow');
   }
-  log(`runAction: fallback jupyter.* path finished in ${Date.now() - t0}ms`);
 }
 
 async function processSyncJson(uri) {
   const fsPath = uri.fsPath;
   const now = Date.now();
 
-  // ① ここで重複イベントを静かに捨てる（ログも出さない）
+  // ① ここで重複イベントログも出す
   if (fsPath === lastSyncPath && now - lastSyncTime < DUP_WINDOW_MS) {
-    return;
-  }
+  log(`dup-guard: ignored (${now - lastSyncTime}ms) ${fsPath}`);
+  return;
+}
+
   lastSyncPath = fsPath;
   lastSyncTime = now;
 
@@ -174,8 +182,12 @@ async function processSyncJson(uri) {
   }
 
   const pyPath = j.file;
-  const action = j.action === 'runAll' ? 'runAll' : 'runBelow';
   const line = Number(j.line) || 1;
+  const rawAction = String(j.action || '');
+  const action =
+  rawAction === 'runAll' ? 'runAll' :
+  rawAction === 'runBelow' ? 'runBelow' :
+  'runCell'; // デフォルトは1セル
 
   // Lua 側で jupy_ms / defer_ms を入れている場合だけ使う（なければ 0）
   const jupyMs = Number(j.jupy_ms) || 0;
@@ -216,6 +228,7 @@ async function processSyncJson(uri) {
   }
 
   const idx = cellIndexFromPy(pyText, line);
+  lastTarget = { ipynbUri, idx };
   log(
     `read .py & cellIndexFromPy: ${Date.now() - tRead}ms (cellIndex=${idx})`,
   );
@@ -251,7 +264,7 @@ function activate(context) {
   // 作成イベントは無視（change だけで十分）
   watcher.onDidCreate(
     uri => {
-      // 必要ならここで log 出してもいいけど、Zenn 用には静かでいいはず
+      // 必要ならここで log 出してもいいけど、静かでいいはず
       // log(`onDidCreate: ${uri.fsPath} (ignored; waiting for change)`);
     },
     null,
@@ -260,16 +273,18 @@ function activate(context) {
 
   // 実際のトリガーは「変更」のみ
   watcher.onDidChange(
-    uri => {
-      processSyncJson(uri);
-    },
-    null,
-    context.subscriptions,
-  );
+  uri => {
+    processSyncJson(uri).catch(e => log(`processSyncJson crashed: ${e}`));
+  },
+  null,
+  context.subscriptions,
+);
+
 
   context.subscriptions.push(watcher);
 
   // 手動コマンド（保険）
+   // 手動コマンド（保険）
   context.subscriptions.push(
     vscode.commands.registerCommand('nvimJupy.runAllNow', async () => {
       await vscode.commands.executeCommand('jupyter.runAllCells');
@@ -278,12 +293,23 @@ function activate(context) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('nvimJupy.runBelowNow', async () => {
-      await vscode.commands.executeCommand('jupyter.runCurrentCell');
-      try {
-        await vscode.commands.executeCommand('jupyter.runCellAndAllBelow');
-      } catch {
-        await vscode.commands.executeCommand('jupyter.runBelow');
+      if (!lastTarget) {
+        vscode.window.showWarningMessage(
+          'まだ対象セルがありません（先に :w で同期してね）',
+        );
+        return;
       }
+
+      const cfg = vscode.workspace.getConfiguration('nvimJupy');
+      const openIfClosed = cfg.get('openIfClosed', true);
+
+      const nbDoc = await openNotebook(lastTarget.ipynbUri, openIfClosed);
+      if (!nbDoc) return;
+
+      const nbEditor = await showNotebookEditor(nbDoc);
+      await selectAndRevealCell(nbEditor, lastTarget.idx);
+
+      await runAction('runBelow', nbDoc, lastTarget.idx);
     }),
   );
 
