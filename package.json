@@ -2,14 +2,16 @@
   "name": "nvim-jupy-bridge",
   "displayName": "Neovim - VS Code Notebook Sync Runner",
   "description": "Auto-jump & execute target cell in vscode notebook, while editing in Neovim (using Jupytext) ",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "Vitor",
-  "engines": { "vscode": "^1.90.0" },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
   "activationEvents": [
-  "onStartupFinished",
-  "onNotebook:jupyter-notebook",
-  "workspaceContains:.vscode/nvim-sync.json"
-],
+    "onStartupFinished",
+    "onNotebook:jupyter-notebook",
+    "workspaceContains:.vscode/nvim-sync.json"
+  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
