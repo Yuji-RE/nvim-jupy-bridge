@@ -4,6 +4,12 @@
   "description": "Auto-jump & execute target cell in vscode notebook, while editing in Neovim (using Jupytext) ",
   "version": "0.0.9",
   "publisher": "Vitor",
+ 
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yuji-RE/nvim-jupy-bridge.git"
+  },
+
   "engines": {
     "vscode": "^1.90.0"
   },
