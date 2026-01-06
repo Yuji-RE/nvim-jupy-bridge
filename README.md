@@ -1,6 +1,8 @@
 [![Status](https://img.shields.io/badge/Status-InProgress-success.svg)]()
 
-# 📖 nvim jupy bridge - NeovimとVSCodeを連携し、シームレスなデータサイエンス開発フローを実現
+# nvim jupy bridge
+
+## NeovimとVSCodeを連携し、シームレスなデータサイエンス開発フローを実現
 
 nvim jupy bridgeは、「Neovimでの快適な編集体験・CLI相性」と「VSCodeのリッチな機能や出力表示」のどちらも妥協できない人のためのJupyter環境を提供する。
 
@@ -16,19 +18,39 @@ nvim jupy bridgeは、「Neovimでの快適な編集体験・CLI相性」と「V
 
 ### シームレスな連携
 
-nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコードセルをリアルタイムに同期する。Neovimでコードを編集し保存すると、VSCode側で即座に反映され、実行・出力が確認できる。編集されたセルへの視点ジャンプ・フォーカス移動も自動化されており、スムーズな開発フローを実現する。
+nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコードセルをリアルタイムに同期する。Neovimでコードを編集し保存すると、VSCode側で素早く反映され、実行・出力が確認できる。編集されたセルへの視点ジャンプ・フォーカス移動も自動化されており、スムーズな開発フローを実現する。
 
 【視点ジャンプ位置「上寄せ」の例】
 
 ![Demo](docs/nvim_jupy_bridge_demo.gif)
 
-視点のジャンプ位置は、`extension.js` 内の
-```javascript
+主要コマンドは以下の通りである。
 
-```
-にて、`AtTop` / `InCenter` / `AtBottom` のいずれかに変更可能である。
+| コマンド（Neovim側） | アクション（VSCode側） |
+| --- | --- |
+| `:w` | 保存 + 現セルを実行 |
+| `<leader>ra` | セルを全て実行 |
+| `<leader>rb` | 現セルより下を全て実行 |
+
 
 ---
+
+<br>
+
+視点ジャンプ位置は、[extension.js](./extension.js) にて、
+```javascript
+nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← この部分
+```
+
+`AtTop`（上寄せ）  
+`InCenter`（中央）  
+`AtBottom`（下寄せ）  
+
+のいずれかに変更可能である。
+
+---
+
+<br>
 
 また、デバッグ用の出力`NvimJupy Debug`で「保存→実行完了」に要した具体的な時間を確認することもできる。
 
@@ -48,7 +70,7 @@ nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコード
 
 ---
 
-### ⚙️ 動作原理
+## 動作原理
 
 この拡張機能のプログラムのざっくりとした流れは以下の通りである。
 
@@ -57,9 +79,6 @@ nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコード
 3. nvim-jupy-bridge 拡張が `nvim-sync.json` を監視し、書き出されたメタ情報を受け取る
 4. 拡張側が `.py` 内の `# %%` を上から数え、「カーソルが属する `# %%` ブロックが何番目か」をセル index として`.ipynb`側のセルにジャンプする。
 5. Notebook API 経由で Jupyter カーネルが該当セルを実行する
-
-
-
 
 ## メリット・デメリット
 
@@ -83,18 +102,9 @@ nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコード
 個人的に現状のトレードオフに不満はないが、将来的な開発をより快適にするために遅延短縮を検討中である。  
 現時点での遅延時間の改善案としては、[NvimJupy Debugの見方](docs/NvimJupy_Debug_guide.md) にて言及している。
 
-## 🛠 主要コマンド一覧 (Key Commands)
-
-| コマンド（Neovim側） | アクション（VSCode側） |
-| --- | --- |
-| `:w` | 保存 + 現セルを実行 |
-| `<leader>ra` | セルを全て実行 |
-| `<leader>rb` | 現セルより下を全て実行 |
-
-
 ---
 
-## 📂 ディレクトリ構成 (Repository Structure)
+## ディレクトリ構成 (Repository Structure)
 
 ```text
 ├── data/
@@ -114,7 +124,7 @@ nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコード
 ```
 ---
 
-## 🚀 再現手順 (How to Run)
+## 再現手順 (How to Run)
 
 ### 1. リポジトリのクローン
 ```bas
@@ -134,11 +144,11 @@ docker-compose up -d
 >その場合は、VSCodeのユーザー設定で以下のオプションを有効化すると問題が解消される場合がある。
 
 ```json
-  "jupytext.syncOnSave": true,          // 保存時に同期
-  "jupytext.watchFiles": true,           // 外部変更を監視してノートブックに反映
+  "jupytext.syncOnSave": true,             // 保存時に同期
+  "jupytext.watchFiles": true,            // 外部変更を監視してノートブックに反映
   "jupyter.alwaysTrustNotebooks": true,  // 毎回の安全確認を省く（任意）
   "files.autoSave": "afterDelay",       // watchFilesと組み合わせて、UI更新を促進
-  "files.autoSaveDelay": 2000,
+  "files.autoSaveDelay": 2000,         // 遅延時間は環境に応じて調整
 ```
 
 NotebookのUIが反映されないのは、Notebook UI の in memory が外部変更よりも優先されるためだと疑われる。
@@ -147,6 +157,11 @@ NotebookのUIが反映されないのは、Notebook UI の in memory が外部�
 
 ---
 
-![NOTE]
->本拡張は筆者が初学者なりに要件定義・挙動の検証・デバッグを行い、実装面(コーディング等)ではAIツールのアシストを大きく活用して開発したものである。
->個人での利用を想定して作成した実験段階のものであり、他環境での動作再現性および安全性は未検証である。
+### 免責事項
+
+本拡張機能は、筆者が初学者なりに要件定義・挙動の検証・デバッグを行い、実装面(コーディング等)ではAIツールのアシストを大きく活用して開発したものである。個人での利用を想定して作成した実験段階のものであり、他環境での動作再現性および安全性は未検証である旨を留意いただきたい。
+また、少しでもこのプロジェクトの透明性を高めるため、開発過程の試行錯誤をドキュメントを[DEV_NOTES.md](./docs/DEV_NOTES.md)にまとめている。
+Zennでは記事としても、より個人的な視点からの開発背景をまとめているため、興味があれば参照いただきたい。
+
+
+
