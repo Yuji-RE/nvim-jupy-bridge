@@ -39,7 +39,7 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 
 <br>
 
-また、デバッグ用の出力`NvimJupy Debug`で「保存→実行完了」に要した具体的な時間を確認することもできる。
+また、デバッグ用の出力 `NvimJupy Debug` で「Neovimで保存→VSCodeで実行完了」に要した具体的な時間を確認することもできる。
 
 ![Debug Output](docs/debug_output.png)
 
@@ -52,7 +52,8 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 
 となっており、`jupy_ms` 側の処理が最も時間を要しており（全体の約7割）、遅延のボトルネックであることが分かる。
 
-詳しくは、[NvimJupy Debugの見方](docs/NvimJupy_Debug_guide.md)
+各出力ラベルの詳細な説明は、[NvimJupy Debugの見かたガイド](docs/NvimJupy_Debug_guide.md)にて解説している。
+
 ## 動作原理
 
 この拡張機能のプログラムのざっくりとした流れは以下の通りである。
@@ -85,10 +86,10 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 
 
 #### 【デメリット】
-- 現時点で同期できるのはjupytext経由での *.py もしくは *.ipynb ファイルのみ
+- 現時点で同期できるのはjupytext経由での `.py` もしくは `.ipynb` ファイルのみ
 - Neovim 単体ですべてを完結させたい場合には向かない
 - WSL / CLI / Jupytext / VS Code など、ツールチェーン前提
-- `jupy_ms`が遅延のボトルネックとなっている
+- `jupy_ms` が遅延のボトルネックとなっている
 
 
 このあたりをどう評価するかは、普段の開発スタイルや職場の方針によると思われる。  
@@ -132,22 +133,36 @@ nvim-jupy-bridge/
 ※ 個人利用を想定した拡張機能であるため、
 Marketplaceでの公開やluaスクリプトのモジュール化は現時点で未実装である点はご了承いただきたい。
 
+---
+
 ### 動作確認済み環境
 
-- OS: Windows 10 + WSL2 Ubuntu 22.04
-- Editor: Neovim
-- Editor + Viewer: VS Code（Jupyter 拡張導入済）
-- CLI: Jupytext
-- Extension: `nvim jupy bridge`
-- Neovim: Lua 設定
 
-### セットアップ
+| 項目 | 内容 |
+|---|---|
+| OS | Windows 10 + WSL2 Ubuntu 22.04 |
+| エディタ | Neovim（Lua設定） |
+| 実行・UI | VS Code（Jupyter 拡張導入） |
+| 同期 | Jupytext（CLI） |
+| 橋渡し | nvim-jupy-bridge（VS Code Extension） |
 
-1. VS Code 側で本拡張機能をインストール・有効化する  
-   - [vsix.zip](./dist/nvim-jupy-bridge-0.0.9.vsix) をダウンロードし、VS Code のコマンドパレットから `Extensions: Install from VSIX...` を実行してインストールする
 
-2. Neovim 側で `nvim-jupy-bridge.lua` を読み込む
-    - Neovim 側で `nvim-jupy-bridge.lua` を読み込む（init.lua等で `dofile("path/to/nvim-jupy-bridge.lua")` を読み込む）
+> Neovimで Jupytextでペアリングされた .py を編集し、VS Codeで 対応する .ipynb を実行する運用を前提
+
+---
+
+### セットアップ （3ステップ）
+
+1. jupytext のインストール  
+   ```bash
+   pip install jupytext
+   ```
+
+2. VS Code 側で本拡張機能をインストール・有効化する  
+   - [vsixパッケージ](./dist/nvim-jupy-bridge-0.0.9.vsix) をダウンロードし、VS Code のコマンドパレットから `Extensions: Install from VSIX...` を実行してインストールする
+
+3. Neovim 側で `nvim-jupy-bridge.lua` を読み込む
+    - Neovim 側で [`nvim-jupy-bridge.lua`](nvim/nvim-jupy-bridge.lua) を読み込む（init.lua などでそのままコピペ可能）
 
 ![NOTE]
 >環境によっては、.pyと.ipynbの同期は成功しても、NotebookのUIが反映されない場合がある。
@@ -162,8 +177,64 @@ Marketplaceでの公開やluaスクリプトのモジュール化は現時点で
 ```
 
 NotebookのUIが反映されないのは、Notebook UI の in memory が外部変更よりも優先されるためだと疑われる。
-実際に、そのような状況でVSCodeで`revert`コマンドを実行すると、UIが反映されることが確認できる。
-上記のユーザー設定は、毎回の`revert`による手動操作を省くための対策である。
+実際に、そのような状況でVSCodeで `revert` コマンドを実行すると、UIが反映されることが確認できる。
+上記のユーザー設定は、毎回の `revert` による手動操作を省くための対策である。
+
+---
+
+### 使い方
+
+1. 同期された`.py` と `.ipynb` ファイルを用意する;
+    - VS Codeで `.ipynb` もしくは `.py` を右クリックし、「Jupytext: Pair Notebook with percent script」を選択して、対応ファイルをファイルを生成する
+    【代替案】
+    - Neovim / Terminal で以下のコマンドを実行して、対応ファイルを生成する
+    ```bash
+    jupytext --set-formats ipynb,py:percent your_notebook.ipynb
+    ```
+
+
+2.  VS Codeで `.ipynb`を、Neovimで `.py` ファイルを開く（推奨: 画面分割 or デュアルモニター表示）
+
+3.  Neovimで `#%%`形式でpyスクリプトを編集し、任意の行で [コマンド](https://github.com/Yuji-RE/nvim-jupy-bridge#%E4%B8%BB%E8%A6%81%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89) を実行する。
+
+4.  VS Code側で以下の処理が自動的に行われる;
+    *   自動的に保存される。
+    *   VS Codeが自動的にスクロールし、該当するセルを実行する。
+    *   Neovimから手を離さずに、グラフや計算結果を確認可能！
+
+---
+
+### 依存関係の詳細
+
+<br>
+
+セットアップ手順は上記の内容で十分な場合が多いと思われるが、
+参考程度に、以下に詳細な依存関係をまとめておく。
+
+#### 依存関係（ユーザーが利用するのに必要）
+
+| 区分 | 依存 | 必須 | 役割 / 備考 |
+|---|---|---:|---|
+| Editor | Neovim | ✅ | `.py` を編集し、同期トリガ情報を `.vscode/nvim-sync.json` に出す（Lua設定） |
+| Sync | Jupytext（CLI / Pythonパッケージ） | ✅ | `.py` ⇄ `.ipynb` のペア運用（同期） |
+| Viewer/Runner | VS Code | ✅ | Notebook UI の表示・操作 |
+| VS Code拡張 | nvim-jupy-bridge（VSIX） | ✅ | `nvim-sync.json` の更新を拾い、セル特定→Notebook操作→実行を行う |
+| VS Code拡張 | Jupyter 拡張（ms-toolsai.jupyter） | ✅ | ノートブック実行コマンド/APIの提供（内部でPython/Jupyter環境が必要） |
+| VS Code拡張 | Python 拡張（ms-python.python） | ✅（実質） | Python環境の検出・選択にほぼ必須（Jupyter運用の前提になりがち） |
+| Kernel | ipykernel（Pythonノートの場合） | ✅（Python時） | Pythonカーネル。ノートブック実行の実体 |
+| Python | Python 3.x | ✅（Python時） | Jupytext と Jupyter カーネル（ipykernel）を動かす実行環境 |
+| Remote | Remote - WSL（WSLで開く場合） | ✅（WSL運用時） | VS Code から WSL 内のプロジェクトを扱うため |
+| Notebook | `.ipynb`（対応するノート） | ✅ | 実行対象。`.py` とペアで運用される前提 |
+
+
+#### 依存関係（拡張の開発・ビルドに必要）
+
+| 区分 | 依存 | 必須 | 役割 / 備考 |
+|---|---|---:|---|
+| Node | Node.js + npm | ✅ | VS Code拡張を開発・パッケージするため（実行時はVS Code内のNodeで動く） |
+| Packaging | vsce（または @vscode/vsce） | ✅ | `.vsix` を作る（配布用パッケージング） |
+| Git | git | 任意 | 開発運用（バージョン管理） |
+
 
 ---
 
@@ -172,7 +243,7 @@ NotebookのUIが反映されないのは、Notebook UI の in memory が外部�
 本拡張機能は、筆者が初学者なりに要件定義・挙動の検証・デバッグを行い、実装面(コーディング等)ではAIツールのアシストを大きく活用して開発したものである。再利用をご検討の場合は、本拡張が個人での利用を想定して作成した実験段階のものであり、他環境での動作再現性および安全性は未検証である旨にご留意いただきたい。
 
 また、少しでもこのプロジェクトの透明性を高めるため、開発過程の試行錯誤をドキュメントを[DEV_NOTES.md](./docs/DEV_NOTES.md)にまとめている。
-Zennでは記事としても、より個人的な視点からの開発背景をまとめているため、興味があれば参照いただきたい。
+より個人的な視点からの開発背景をまとめた[Zenn記事](link)もあるため、興味があれば参照いただきたい。
 
 
 
