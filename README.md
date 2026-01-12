@@ -104,27 +104,21 @@ nvim-jupy-bridge/
 ├── LICENSE
 ├── CHANGELOG.md
 ├── docs/
-│   ├── nvim-jupy-bridge_demo.gif         # Demo (shown in README)
-│   ├── nvim-jupy-debug-system.md         # Debug log spec / how to read logs
-│   └── screenshots/                      # (optional) images for docs
+│   ├── nvim-jupy-bridge_demo.gif
+│   └── nvim-jupy-debug-system.md
 │
-├── extension/                            # VS Code extension source
-│   ├── extension.js                      # main entry (activate, commands)
-│   ├── package.json                      # manifest (commands / contributes)
-│   ├── package-lock.json                 # lockfile (commit recommended)
+├── extension/
+│   ├── extension.js
+│   ├── package.json
+│   ├── package-lock.json
 │   └── test/
-│       └── extension.test.js             # (optional)
+│       └── extension.test.js
 │
-├── nvim/                                 # luaスクリプトのモジュール化は現時点で未実装
-│   └── nvim-jupy-bridge.lua              # copy-pasteable Lua (writes nvim-sync.json)
+├── nvim/
+│   └── nvim-jupy-bridge.lua
 │
-├── scripts/                              # (optional) helper scripts for dev/release
-│   ├── build-vsix.sh                     # package .vsix (vsce)
-│   └── dev-watch.sh                      # (optional) quick dev workflow helpers
-│
-├── dist/                                 # (optional) prebuilt artifacts
-│   └── nvim-jupy-bridge-0.x.y.vsix        # ONLY if you decide to ship binaries
-│
+├── dist/
+│   └── nvim-jupy-bridge-0.0.9.vsix
 └── .gitignore
 ```
 
@@ -238,7 +232,7 @@ NotebookのUIが反映されないのは、Notebook UI の in memory が外部�
 
 ---
 
-### 免責事項
+### ⚠️免責事項
 
 本拡張機能は、筆者が初学者なりに要件定義・挙動の検証・デバッグを行い、実装面(コーディング等)ではAIツールのアシストを大きく活用して開発したものである。再利用をご検討の場合は、本拡張が個人での利用を想定して作成した実験段階のものであり、他環境での動作再現性および安全性は未検証である旨にご留意いただきたい。
 
