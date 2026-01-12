@@ -11,16 +11,16 @@
 
 という**役割分担**だった。
 
-ポイントは「Jupyter と同期」ではなく**“Jupyter 拡張を使っている VS Code の Notebook UI と同期できるか？”**という視点だ。
+ポイントは「Jupyter と同期」ではなく**「Jupyter 拡張を使っている VS Code の Notebook UI と同期できるか？」**という視点だ。
 
 なぜ既存のJupyter環境では私のニーズとユースケースにマッチしなかったのかは、こちらの[Zenn記事](link)にて言及している。
 
 
 ## 1. 最初の案：外部マクロ（jupytext CLI）での同期
 
-Gemini 2.5 Pro に相談し、`jupytext --sync` を外部 CLI で叩けば実現できるという提案を採用。
+NeovimでJupyter環境の構築を模索し始めた当初、Neovim プラグインである [jupynium.nvim](https://github.com/kiyoon/jupynium.nvim) から着想を得て、[jupytext](https://github.com/mwouts/jupytext) を使って Neovim と VS Code 間でリアルタイムなファイル同期を試みた。
 
-しかし、Neovim で `.py` を編集しても **VS Code 側の `.ipynb` Notebook UI に反映されない**問題が発生した。
+しかし、`jupytext --sync` を外部 CLI で叩くだけでは、Neovim で編集した `.py` の内容が VS Code 側の `.ipynb` **Notebook UI に反映されない** 問題が発生した。
 
 ### 観測できたこと
 
@@ -28,14 +28,14 @@ Gemini 2.5 Pro に相談し、`jupytext --sync` を外部 CLI で叩けば実現
 - 一方で Notebook UI は更新されず、表示が “凍る”
 - ただし VS Code の **Revert** を実行すると UI は反映される
 
-→ ボトルネックは `.py` と `.ipynb` の同期ではなく、**VS Code Notebook Editor の in-memory 状態とディスクのズレ** が原因という疑惑が発生した。
+→ ボトルネックは `.py` と `.ipynb` の同期ではなく、**VS Code Notebook Editor の in-memory 状態とディスクのズレ** が原因という疑惑が生まれた。
 具体的には、
 
 > 外部から `.ipynb` を上書きし続けると、VS Code Notebook Editor は  
 > 「開いているノートの in-memory 状態」と「ディスク上のファイル」がズレる。  
 > その結果、安全のため UI 更新が抑制されている可能性がある。
 
-とのことだった。
+という仮説だった。
 
 ### マクロ案（Gemini 提案）
 
@@ -57,7 +57,7 @@ Gemini 2.5 Pro に相談し、`jupytext --sync` を外部 CLI で叩けば実現
 
 ## 2. マクロの課題を解決するための自作拡張
 
-Gemini の提案が環境依存で再現性が低かったため、上記の検証結果を整理して GPT 5.0 側にフィードバックを引き継いだ。
+上記の検証結果を整理して GPT 5.0 側にフィードバックを引き継いだ。
 
 そこで
 
@@ -68,9 +68,9 @@ Gemini の提案が環境依存で再現性が低かったため、上記の検�
 
 が挙動に影響するため、外部イベントとマクロの連携は不安定要因になり得るということが判明した。
 
-対策として、外部から同期イベントを起こして `.ipynb` を更新させるのではなく、  
-**VS Code 内部で整合性を保てるルート（Jupytext拡張の in-memory 反映）を前提にした同期フローに切り替えた。
-これにより、**UI 更新とカーネル維持の両立**が現実的になった。
+対策として、外部から同期イベントを起こして `.ipynb` を更新させるのではなく、
+VS Code 内部で整合性を保てるルート（Jupytext拡張の in-memory 反映）を前提にした同期フローに切り替えた。
+これにより、**UI 更新とカーネル維持の両立** が現実的になった。
 
 つまり、外部の同期コマンドを **VS Code 内部の Notebook 実行経路に寄せる** ことをミッションに開発されたのが
 現行の `nvim-jupy-bridge` のプロトタイプ（v0.01）であり、当初は単に `.py` と `.ipynb` を任意のタイミングで同期させる機能に過ぎなかった。
@@ -87,10 +87,10 @@ Gemini の提案が環境依存で再現性が低かったため、上記の検�
 v0.01 に加えて、以下を実現：
 
 - Neovim 側で `:w` すると同時に、VS Code 側で **対象セルへジャンプ → 実行**（自動）
-- Neovim から **Run All Cells / Run Cells Below** が叩ける
-- VS Code 側の変更もワークフローに取り込める（双方向運用によるワークフローの柔軟性の向上）
-- `NvimJupy Debug` のログ出力で、保存→検知→ジャンプ→実行の各プロセス所要時間を可視化
-- 遅延時間を削減（例：1セルあたり約400msの改善）
+- Neovim からコマンド; **Run All Cells / Run Cells Below** が叩ける
+- VS Code 側からの編集内容も反映可能 （双方向運用によるワークフローの柔軟性の向上）
+- `NvimJupy Debug` のログ出力で、保存→検知→ジャンプ→実行の各プロセス所要時間を可視化可能
+- 遅延時間を削減（固定遅延時間を短縮しても安定動作するよう改善）
 
 
 ### 内部仕様

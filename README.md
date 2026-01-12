@@ -26,7 +26,7 @@ nvim jupy bridgeは、NeovimとVSCode間でJupyterノートブックのコード
 
 <br>
 
-視点ジャンプ位置は、[extension.js](./extension.js) にて、
+視点ジャンプ位置は、`[extension.js](./extension.js)` にて、
 ```javascript
 nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← この部分
 ```
@@ -52,7 +52,7 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 
 となっており、`jupy_ms` 側の処理が最も時間を要しており（全体の約7割）、遅延のボトルネックであることが分かる。
 
-各出力ラベルの詳細な説明は、[NvimJupy Debugの見かたガイド](docs/NvimJupy_Debug_guide.md)にて解説している。
+各出力ラベルの詳細な説明は、[NvimJupy Debugの見かたガイド](docs/NvimJupy_Debug_guide.md) にて解説している。
 
 ## 動作原理
 
@@ -61,7 +61,7 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 1. Neovim で `# %%` 付きの `.py` ファイルを保存すると、Lua が Jupytext の同期コマンドを実行する
 2. 保存されたファイルのメタ情報を、プロジェクト直下の `.vscode/nvim-sync.json` に書き出す
 3. nvim-jupy-bridge 拡張が `nvim-sync.json` を監視し、書き出されたメタ情報を受け取る
-4. 拡張側が `.py` 内の `# %%` を上から数え、「カーソルが属する `# %%` ブロックが何番目か」をセル index として`.ipynb`側のセルにジャンプする。
+4. 拡張側が `.py` 内の `# %%` を上から数え、「カーソルが属する `# %%` ブロックが何番目か」をセル index として `.ipynb` 側のセルにジャンプする。
 5. Notebook API 経由で Jupyter カーネルが該当セルを実行する
 
 ## 主要コマンド
@@ -92,20 +92,20 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 - `jupy_ms` が遅延のボトルネックとなっている
 
 
-このあたりをどう評価するかは、普段の開発スタイルや職場の方針によると思われる。  
-個人的に現状のトレードオフに不満はないが、将来的な開発をより快適にするために遅延短縮を検討中である。  
-現時点での遅延時間の改善案としては、[NvimJupy Debugの見方](docs/NvimJupy_Debug_guide.md) にて言及している。
+このあたりをどう評価するかは、普段の開発スタイルや職場の方針によると思われる。個人的に現状のトレードオフに不満はないが、将来的な開発をより快適にするために遅延短縮を検討中である。現時点での遅延時間の改善案としては、[NvimJupy Debugの見方](docs/NvimJupy_Debug_guide.md) にて言及している。
 
 ## ディレクトリ構成
 
 ```text
 nvim-jupy-bridge/
 ├── README.md
-├── LICENSE
 ├── CHANGELOG.md
+├── LICENSE
 ├── docs/
-│   ├── nvim-jupy-bridge_demo.gif
-│   └── nvim-jupy-debug-system.md
+│   ├── DEV_NOTES.md
+│   ├── debug_output.png
+│   ├── nvim_jupy_bridge_demo.gif
+│   └── NvimJupy_Debug_guide.md
 │
 ├── extension/
 │   ├── extension.js
@@ -114,11 +114,15 @@ nvim-jupy-bridge/
 │   └── test/
 │       └── extension.test.js
 │
+├─ vscode/
+│  ├──.vscodeignore
+│  └──.vscode-test.mjs
+│
 ├── nvim/
 │   └── nvim-jupy-bridge.lua
 │
-├── dist/
-│   └── nvim-jupy-bridge-0.0.9.vsix
+├── eslint.config.mjs
+├── jsconfig.json
 └── .gitignore
 ```
 
@@ -134,11 +138,11 @@ Marketplaceでの公開やluaスクリプトのモジュール化は現時点で
 
 | 項目 | 内容 |
 |---|---|
-| OS | Windows 10 + WSL2 Ubuntu 22.04 |
-| エディタ | Neovim（Lua設定） |
-| 実行・UI | VS Code（Jupyter 拡張導入） |
-| 同期 | Jupytext（CLI） |
-| 橋渡し | nvim-jupy-bridge（VS Code Extension） |
+| OS | Windows 11 + WSL2 Ubuntu 22.04 |
+| エディタ | Neovim v0.11.4 |
+| 実行・UI | VS Code 1.107.1 |
+| 同期 | Jupytext 1.18.1（CLI） |
+| 橋渡し | nvim-jupy-bridge v0.0.9 |
 
 
 > Neovimで Jupytextでペアリングされた .py を編集し、VS Codeで 対応する .ipynb を実行する運用を前提
@@ -153,26 +157,10 @@ Marketplaceでの公開やluaスクリプトのモジュール化は現時点で
    ```
 
 2. VS Code 側で本拡張機能をインストール・有効化する  
-   - [vsixパッケージ](./dist/nvim-jupy-bridge-0.0.9.vsix) をダウンロードし、VS Code のコマンドパレットから `Extensions: Install from VSIX...` を実行してインストールする
+   - Assets から [vsixパッケージ](https://github.com/Yuji-RE/nvim-jupy-bridge/releases/tag/v0.0.9) をダウンロードし、VS Code のコマンドパレットから `Extensions: Install from VSIX...` を実行してインストールする
 
 3. Neovim 側で `nvim-jupy-bridge.lua` を読み込む
     - Neovim 側で [`nvim-jupy-bridge.lua`](nvim/nvim-jupy-bridge.lua) を読み込む（init.lua などでそのままコピペ可能）
-
-![NOTE]
->環境によっては、.pyと.ipynbの同期は成功しても、NotebookのUIが反映されない場合がある。
->その場合は、VSCodeのユーザー設定で以下のオプションを有効化すると問題が解消される場合がある。
-
-```json
-  "jupytext.syncOnSave": true,             // 保存時に同期
-  "jupytext.watchFiles": true,            // 外部変更を監視してノートブックに反映
-  "jupyter.alwaysTrustNotebooks": true,  // 毎回の安全確認を省く（任意）
-  "files.autoSave": "afterDelay",       // watchFilesと組み合わせて、UI更新を促進
-  "files.autoSaveDelay": 2000,         // 遅延時間は環境に応じて調整
-```
-
-NotebookのUIが反映されないのは、Notebook UI の in memory が外部変更よりも優先されるためだと疑われる。
-実際に、そのような状況でVSCodeで `revert` コマンドを実行すると、UIが反映されることが確認できる。
-上記のユーザー設定は、毎回の `revert` による手動操作を省くための対策である。
 
 ---
 
@@ -186,7 +174,6 @@ NotebookのUIが反映されないのは、Notebook UI の in memory が外部�
     jupytext --set-formats ipynb,py:percent your_notebook.ipynb
     ```
 
-
 2.  VS Codeで `.ipynb`を、Neovimで `.py` ファイルを開く（推奨: 画面分割 or デュアルモニター表示）
 
 3.  Neovimで `#%%`形式でpyスクリプトを編集し、任意の行で [コマンド](https://github.com/Yuji-RE/nvim-jupy-bridge#%E4%B8%BB%E8%A6%81%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89) を実行する。
@@ -194,7 +181,26 @@ NotebookのUIが反映されないのは、Notebook UI の in memory が外部�
 4.  VS Code側で以下の処理が自動的に行われる;
     *   自動的に保存される。
     *   VS Codeが自動的にスクロールし、該当するセルを実行する。
-    *   Neovimから手を離さずに、グラフや計算結果を確認可能！
+
+→ 結果、Neovimから手を離さずに、グラフや計算結果を確認可能
+
+---
+
+> [!NOTE]
+> 環境によっては、`.py` と `.ipynb` の同期は成功しても、NotebookのUIが反映されない場合がある。
+> その際は、VSCodeのユーザー設定で以下のオプションを有効化すると問題が解消される場合がある。
+
+```json
+  "jupytext.syncOnSave": true,             // 保存時に同期
+  "jupytext.watchFiles": true,            // 外部変更を監視してノートブックに反映
+  "jupyter.alwaysTrustNotebooks": true,  // 毎回の安全確認を省く（任意）
+  "files.autoSave": "afterDelay",       // watchFilesと組み合わせて、UI更新を促進
+  "files.autoSaveDelay": 2000,         // 遅延時間は環境に応じて調整
+```
+
+NotebookのUIが反映されないのは、Notebook UI の in memory が外部変更よりも優先されるためだと疑われる。
+実際に、そのような状況でVSCodeで `revert` コマンドを実行すると、UIが反映されることが確認できる。
+上記のユーザー設定は、毎回の `revert` による手動操作を省くための対策である。
 
 ---
 
