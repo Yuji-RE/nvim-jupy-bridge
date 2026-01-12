@@ -1,4 +1,10 @@
 [![Status](https://img.shields.io/badge/Status-InProgress-success.svg)]()
+![Release](https://img.shields.io/github/v/release/Yuji-RE/nvim-jupy-bridge)
+![License](https://img.shields.io/github/license/Yuji-RE/nvim-jupy-bridge)
+
+<p align="right">
+  <a href="./README.en.md">English</a>
+</p>
 
 # nvim jupy bridge
 
@@ -98,7 +104,8 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 
 ```text
 nvim-jupy-bridge/
-├── README.md
+├── README.ja.md
+├── README.en.md
 ├── CHANGELOG.md
 ├── LICENSE
 ├── docs/
@@ -114,7 +121,12 @@ nvim-jupy-bridge/
 │   └── test/
 │       └── extension.test.js
 │
-├─ vscode/
+├── .vscode/
+│   └── extensions.json
+│   └── launch.json
+│   └── nvim-sync.json
+│
+├─ vscode-ext/
 │  ├──.vscodeignore
 │  └──.vscode-test.mjs
 │
@@ -140,7 +152,7 @@ Marketplaceでの公開やluaスクリプトのモジュール化は現時点で
 |---|---|
 | OS | Windows 11 + WSL2 Ubuntu 22.04 |
 | エディタ | Neovim v0.11.4 |
-| 実行・UI | VS Code 1.107.1 |
+| 実行・UI | VS Code 1.107.1 (Remote - WSL) |
 | 同期 | Jupytext 1.18.1（CLI） |
 | 橋渡し | nvim-jupy-bridge v0.0.9 |
 
