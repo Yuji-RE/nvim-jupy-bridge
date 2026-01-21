@@ -58,7 +58,7 @@ nbEditor.revealRange(range, vscode.NotebookEditorRevealType.AtTop);   // ← こ
 
 となっており、`jupy_ms` 側の処理が最も時間を要しており（全体の約7割）、遅延のボトルネックであることが分かる。
 
-各出力ラベルの詳細な説明は、[NvimJupy Debugの見かたガイド](docs/NvimJupy_Debug_guide.md) にて解説している。
+各出力ラベルの詳細な説明は、[NvimJupy Debugの見方](docs/NvimJupy_Debug_guide.md) にて解説している。
 
 ## 動作原理
 
@@ -255,7 +255,4 @@ NotebookのUIが反映されないのは、Notebook UI の in memory が外部�
 本拡張機能は、筆者が初学者なりに要件定義・挙動の検証・デバッグを行い、実装面(コーディング等)ではAIツールのアシストを大きく活用して開発したものである。再利用をご検討の場合は、本拡張が個人での利用を想定して作成した実験段階のものであり、他環境での動作再現性および安全性は未検証である旨にご留意いただきたい。
 
 また、少しでもこのプロジェクトの透明性を高めるため、開発過程の試行錯誤をドキュメントを[DEV_NOTES.md](./docs/DEV_NOTES.md)にまとめている。
-より個人的な視点からの開発背景をまとめた[Zenn記事](link)もあるため、興味があれば参照いただきたい。
-
-
-
+より個人的な視点からの開発背景をまとめた[Zenn記事](https://github.com/Yuji-RE/Zenn_BLOG/blob/main/articles/Inprogress.md)（執筆途中）もあるため、興味があれば参照いただきたい。
